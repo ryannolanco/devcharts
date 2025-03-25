@@ -1,7 +1,12 @@
 import './App.css';
+import StockPrices from './stock-prices/StockPrices';
 
 function App() {
-	return <div>TESTING</div>;
+	return (
+		<div>
+			<StockPrices />
+		</div>
+	);
 }
 
 export default App;

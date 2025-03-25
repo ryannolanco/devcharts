@@ -13,3 +13,9 @@ async function stockTickerIsValid(req, res, next) {
 		});
 	}
 }
+
+async function getStockInformation(params) {}
+
+module.exports = {
+	list: [stockTickerIsValid],
+};

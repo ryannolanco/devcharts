@@ -24,6 +24,7 @@
 		"concurrently": "^9.1.2"
 	},
 	"dependencies": {
-		"finnhub": "^1.2.19"
+		"finnhub": "^1.2.19",
+		"ws": "^8.18.1"
 	}
 }
