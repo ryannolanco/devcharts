@@ -1,4 +1,7 @@
-const { PORT = 5000 } = process.env;
+import cors from 'cors';
+import dotenv from 'dotenv';
+
+const { PORT = 5001 } = process.env;
 const app = require('./app');
 
 const listener = () => console.log(`listening on port ${PORT}!`);
