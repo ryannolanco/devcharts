@@ -4,7 +4,9 @@ const apiURL = import.meta.env.VITE_FINN_HUBB_API_URL;
 
 const StockPrices = () => {
 	const connection = useRef(null);
-	const [messages, setMessages] = useState([]);
+	// const [messages, setMessages] = useState([]);
+	const [mostRecentPrice, setMostRecentPrice] = useState(null);
+	const [stockName, setStockName] = useState('');
 
 	useEffect(() => {
 		console.log(apiURL);
@@ -19,11 +21,25 @@ const StockPrices = () => {
 
 		socket.addEventListener('message', (event) => {
 			const data = JSON.parse(event.data);
-			console.log('Message from server', data);
 
-			if (data.type !== 'ping') {
-				setMessages((prev) => [...prev, data]);
+			if (data.type === 'trade') {
+				const tradeData = data.data;
+
+				const mostRecentTrade =
+					tradeData.length > 0
+						? tradeData.reduce((latest, trade) =>
+								trade.t > latest.t ? trade : latest
+						  )
+						: null;
+
+				setMostRecentPrice(Number(mostRecentTrade.p));
 			}
+
+			// console.log('Message from server', tradeData);
+
+			// if (data.type !== 'ping') {
+			// 	setMessages((prev) => [...prev, tradeData]);
+			// }
 
 			// Handle errors gracefully
 			if (data.type === 'error') {
@@ -50,28 +66,28 @@ const StockPrices = () => {
 
 	const subscribeToStock = (symbol) => {
 		console.log(`subscibing to ${symbol}`);
-		console.log(messages);
+		setStockName(symbol);
 		connection.current.send(
-			JSON.stringify({ type: 'subscribe', symbol: 'AAPL' })
+			JSON.stringify({ type: 'subscribe', symbol: symbol })
 		);
 	};
 
 	const unsubscribeToStock = (symbol) => {
-		console.log(`unsubscibing to ${symbol}`);
+		setMostRecentPrice(null);
+		setStockName('');
 		connection.current.send(
-			JSON.stringify({ type: 'unsubscribe', symbol: 'AAPL' })
+			JSON.stringify({ type: 'unsubscribe', symbol: symbol })
 		);
 	};
 
 	return (
 		<div>
 			<div>
-				This our our messages
-				{messages.map((message) => {
-					if (message.type === 'trade') {
-						return <div>{message}</div>;
-					}
-				})}
+				Latest Trade
+				<div key={stockName}>
+					<h4>Stock: {stockName}</h4>
+					<p>Price: {mostRecentPrice}</p>
+				</div>
 			</div>
 			<button onClick={() => subscribeToStock('BINANCE:BTCUSDT')}>
 				Subscribe
@@ -79,6 +95,7 @@ const StockPrices = () => {
 			<button onClick={() => unsubscribeToStock('BINANCE:BTCUSDT')}>
 				Unsubscribe
 			</button>
+			<button onClick={() => console.log(messages)}>Log</button>
 		</div>
 	);
 };
