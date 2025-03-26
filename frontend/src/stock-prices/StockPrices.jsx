@@ -1,80 +1,84 @@
 import React, { useEffect, useRef, useState } from 'react';
 
-const apiToken = import.meta.env.VITE_FINN_HUBB_API_KEY;
+const apiURL = import.meta.env.VITE_FINN_HUBB_API_URL;
 
 const StockPrices = () => {
+	const connection = useRef(null);
 	const [messages, setMessages] = useState([]);
-	const socketRef = useRef(null);
 
 	useEffect(() => {
-		console.log('API Token:', apiToken);
+		console.log(apiURL);
 
-		// Initialize WebSocket connection
-		const socket = new WebSocket(`wss://ws.finnhub.io?token=${apiToken}`);
-		socketRef.current = socket;
+		const socket = new WebSocket(
+			'wss://ws.finnhub.io?token=cvefg0pr01ql1jnb32cgcvefg0pr01ql1jnb32d0'
+		);
 
-		// Handle successful connection
-		socket.onopen = () => {
-			console.log('WebSocket Connected!');
-		};
+		socket.addEventListener('open', (event) => {
+			console.log('WebSocket connected');
+		});
 
-		// Handle incoming messages
-		socket.onmessage = (event) => {
+		socket.addEventListener('message', (event) => {
 			const data = JSON.parse(event.data);
-			if (data.type === 'trade') {
-				setMessages((prev) => [...prev, JSON.stringify(data.data)]);
+			console.log('Message from server', data);
+
+			if (data.type !== 'ping') {
+				setMessages((prev) => [...prev, data]);
 			}
-		};
 
-		// Handle errors
-		socket.onerror = (error) => {
-			console.error('WebSocket Error:', error);
-		};
+			// Handle errors gracefully
+			if (data.type === 'error') {
+				console.error('Error from server:', data.msg);
+			}
+		});
 
-		// Handle WebSocket closure
-		socket.onclose = (event) => {
-			console.log('WebSocket Closed:', event);
-		};
+		socket.addEventListener('close', () => {
+			console.log('WebSocket closed');
+		});
 
-		// Cleanup function to close the WebSocket on unmount
+		connection.current = socket;
+
 		return () => {
-			if (socketRef.current?.readyState === WebSocket.OPEN) {
-				socketRef.current.close();
+			if (
+				connection.current &&
+				connection.current.readyState === WebSocket.OPEN
+			) {
+				console.log('Closing WebSocket...');
+				connection.current.close();
 			}
 		};
 	}, []);
 
-	// Function to send a message safely
-	const sendMessage = (message) => {
-		if (socketRef.current?.readyState === WebSocket.OPEN) {
-			socketRef.current.send(JSON.stringify(message));
-		} else {
-			console.warn('WebSocket not open. Cannot send message.');
-		}
+	const subscribeToStock = (symbol) => {
+		console.log(`subscibing to ${symbol}`);
+		console.log(messages);
+		connection.current.send(
+			JSON.stringify({ type: 'subscribe', symbol: 'AAPL' })
+		);
 	};
 
-	// Function to unsubscribe from a symbol
-	const unsubscribe = (symbol) => {
-		console.log('unsubscribing');
-		sendMessage({ type: 'unsubscribe', symbol });
-	};
-
-	// Function to subscribe to a symbol
-	const subscribe = (symbol) => {
-		console.log('subscribing');
-		sendMessage({ type: 'subscribe', symbol });
+	const unsubscribeToStock = (symbol) => {
+		console.log(`unsubscibing to ${symbol}`);
+		connection.current.send(
+			JSON.stringify({ type: 'unsubscribe', symbol: 'AAPL' })
+		);
 	};
 
 	return (
 		<div>
-			<h2>WebSocket Messages</h2>
-			<ul>
-				{messages.map((msg, index) => (
-					<li key={index}>{msg}</li>
-				))}
-			</ul>
-			<button onClick={() => unsubscribe('AAPL')}>Unsubscribe AAPL</button>
-			<button onClick={() => subscribe('AAPL')}>Subscribe AAPL</button>
+			<div>
+				This our our messages
+				{messages.map((message) => {
+					if (message.type === 'trade') {
+						return <div>{message}</div>;
+					}
+				})}
+			</div>
+			<button onClick={() => subscribeToStock('BINANCE:BTCUSDT')}>
+				Subscribe
+			</button>
+			<button onClick={() => unsubscribeToStock('BINANCE:BTCUSDT')}>
+				Unsubscribe
+			</button>
 		</div>
 	);
 };
