@@ -1,4 +1,4 @@
-export default function tradeMessage(data, setMostRecentPrice) {
+export default function tradeMessage(data) {
 	//this will need some more computing logic, need to deterimne how many sale per price
 	//and set accordingly
 	const tradeData = data.data;
@@ -10,8 +10,7 @@ export default function tradeMessage(data, setMostRecentPrice) {
 			  )
 			: null;
 
-	setMostRecentPrice({
-		price: Number(mostRecentTrade.p),
-		sales: Number(tradeData.length),
-	});
+	//return specific time of sales object {time: [trades], time: [trades]}
+
+	return; //time of sales object
 }

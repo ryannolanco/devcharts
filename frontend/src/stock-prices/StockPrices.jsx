@@ -5,21 +5,17 @@ const apiURL = import.meta.env.VITE_FINN_HUBB_API_URL;
 
 const StockPrices = () => {
 	const connection = useRef(null);
-	// const [messages, setMessages] = useState([]);
-	const [mostRecentPrice, setMostRecentPrice] = useState({
-		price: 0,
-		sales: 0,
-	});
+
 	const [stockName, setStockName] = useState('');
 	const [tickerInput, setTickerInput] = useState('');
 	const [oldTicker, setOldTicker] = useState('');
 
+	const [trades, setTrades] = useState([]);
+
 	useEffect(() => {
 		console.log(apiURL);
 
-		const socket = new WebSocket(
-			'wss://ws.finnhub.io?token=cvefg0pr01ql1jnb32cgcvefg0pr01ql1jnb32d0'
-		);
+		const socket = new WebSocket(apiURL);
 
 		socket.addEventListener('open', (event) => {
 			console.log('WebSocket connected');
@@ -29,7 +25,8 @@ const StockPrices = () => {
 			const data = JSON.parse(event.data);
 
 			if (data.type === 'trade') {
-				tradeMessage(data, setMostRecentPrice);
+				const tosObject = tradeMessage(data);
+				// logic for updating queue, a forEach to loop over tosObject and extract time array items.
 			}
 
 			// Handle errors gracefully
@@ -83,6 +80,7 @@ const StockPrices = () => {
 		setTickerInput('');
 		subscribeToStock(tickerInput);
 	};
+	// lets move the form logic over to a new form file
 
 	return (
 		<div>
