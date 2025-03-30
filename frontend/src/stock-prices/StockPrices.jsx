@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
-import tradeMessage from './stock-prices-functions/tradeMessageLogic';
+import tradeMessage from './stock-prices-functions/tradeMessage';
+import Queue from '../classes/Queue';
 
 const apiURL = import.meta.env.VITE_FINN_HUBB_API_URL;
 
@@ -11,6 +12,8 @@ const StockPrices = () => {
 	const [oldTicker, setOldTicker] = useState('');
 
 	const [trades, setTrades] = useState([]);
+
+	const tradeQueue = new Queue(10);
 
 	useEffect(() => {
 		console.log(apiURL);
@@ -26,6 +29,12 @@ const StockPrices = () => {
 
 			if (data.type === 'trade') {
 				const tosObject = tradeMessage(data);
+
+				tosObject.forEach((item) => {
+					tradeQueue.enqueue(item);
+				});
+
+				setTrades(tradeQueue.getItems());
 				// logic for updating queue, a forEach to loop over tosObject and extract time array items.
 			}
 
@@ -61,7 +70,7 @@ const StockPrices = () => {
 	};
 
 	const unsubscribeToStock = (symbol) => {
-		setMostRecentPrice(null);
+		// setMostRecentPrice(null);
 		setStockName('');
 		connection.current.send(
 			JSON.stringify({ type: 'unsubscribe', symbol: symbol })
@@ -82,14 +91,23 @@ const StockPrices = () => {
 	};
 	// lets move the form logic over to a new form file
 
+	const mappedTrades = trades.map((trade, index) => {
+		return (
+			<li key={index}>
+				<p>
+					Ticker: {trade.s} Price: {trade.p} Time: {trade.t}
+				</p>
+			</li>
+		);
+	});
+
 	return (
 		<div>
 			<div>
 				Latest Trade
 				<div key={stockName}>
 					<h4>Stock: {stockName}</h4>
-					<p>Price: {mostRecentPrice ? mostRecentPrice.price : null}</p>
-					<p>Sales: {mostRecentPrice ? mostRecentPrice.sales : null}</p>
+					<ul>{mappedTrades}</ul>
 				</div>
 			</div>
 			<button onClick={() => console.log(`debugging log`)}>Log</button>
