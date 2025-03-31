@@ -18,7 +18,8 @@ const StockPrices = () => {
 	useEffect(() => {
 		console.log(apiURL);
 
-		const socket = new WebSocket(apiURL);
+		// const socket = new WebSocket(apiURL);
+		const socket = new WebSocket('wss://stream.data.alpaca.markets/v2/test');
 
 		socket.addEventListener('open', (event) => {
 			console.log('WebSocket connected');
@@ -26,17 +27,18 @@ const StockPrices = () => {
 
 		socket.addEventListener('message', (event) => {
 			const data = JSON.parse(event.data);
+			console.log(data);
 
-			if (data.type === 'trade') {
-				const tosObject = tradeMessage(data);
+			// if (data.type === 'trade') {
+			// 	const tosObject = tradeMessage(data);
 
-				tosObject.forEach((item) => {
-					tradeQueue.enqueue(item);
-				});
+			// 	tosObject.forEach((item) => {
+			// 		tradeQueue.enqueue(item);
+			// 	});
 
-				setTrades(tradeQueue.getItems());
-				// logic for updating queue, a forEach to loop over tosObject and extract time array items.
-			}
+			// 	setTrades(tradeQueue.getItems());
+			// 	// logic for updating queue, a forEach to loop over tosObject and extract time array items.
+			// }
 
 			// Handle errors gracefully
 			if (data.type === 'error') {
