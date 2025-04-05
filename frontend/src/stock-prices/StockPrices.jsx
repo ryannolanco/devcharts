@@ -2,7 +2,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import tradeMessage from './stock-prices-functions/tradeMessage';
 import Queue from '../classes/Queue';
 
-const apiURL = import.meta.env.VITE_FINN_HUBB_API_URL;
+const ALPACA_API_KEY_ID = import.meta.env.VITE_ALPACA_API_KEY_ID;
+const ALPACA_API_SECRET_ID = import.meta.env.VITE_ALPACA_API_SECRET_ID;
 
 const StockPrices = () => {
 	const connection = useRef(null);
@@ -16,18 +17,30 @@ const StockPrices = () => {
 	const tradeQueue = new Queue(10);
 
 	useEffect(() => {
-		console.log(apiURL);
-
 		// const socket = new WebSocket(apiURL);
 		const socket = new WebSocket('wss://stream.data.alpaca.markets/v2/test');
 
 		socket.addEventListener('open', (event) => {
 			console.log('WebSocket connected');
+
+			const authMsg = {
+				action: 'auth',
+				key: ALPACA_API_KEY_ID,
+				secret: ALPACA_API_SECRET_ID,
+			};
+
+			socket.send(JSON.stringify(authMsg));
 		});
 
 		socket.addEventListener('message', (event) => {
 			const data = JSON.parse(event.data);
-			console.log(data);
+			console.log('Message from server:', data);
+
+			const subscribeMsg = { action: 'subscribe', trades: ['FAKEPACA'] };
+
+			if (data[0]?.msg === 'authenticated') {
+				socket.send(JSON.stringify(subscribeMsg));
+			}
 
 			// if (data.type === 'trade') {
 			// 	const tosObject = tradeMessage(data);
