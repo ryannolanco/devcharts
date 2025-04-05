@@ -10,17 +10,16 @@ const StockPrices = () => {
 
 	const [stockName, setStockName] = useState('');
 	const [tickerInput, setTickerInput] = useState('');
-	const [oldTicker, setOldTicker] = useState('');
-
+	const [currentTicker, setCurrentTicker] = useState('');
 	const [trades, setTrades] = useState([]);
 
 	const tradeQueue = new Queue(10);
 
 	useEffect(() => {
-		// const socket = new WebSocket(apiURL);
 		const socket = new WebSocket('wss://stream.data.alpaca.markets/v2/test');
+		connection.current = socket;
 
-		socket.addEventListener('open', (event) => {
+		socket.addEventListener('open', () => {
 			console.log('WebSocket connected');
 
 			const authMsg = {
@@ -36,24 +35,39 @@ const StockPrices = () => {
 			const data = JSON.parse(event.data);
 			console.log('Message from server:', data);
 
-			const subscribeMsg = { action: 'subscribe', trades: ['FAKEPACA'] };
-
-			if (data[0]?.msg === 'authenticated') {
-				socket.send(JSON.stringify(subscribeMsg));
+			// Handle authentication confirmation
+			if (
+				Array.isArray(data) &&
+				data[0]?.T === 'success' &&
+				data[0]?.msg === 'authenticated'
+			) {
+				console.log('Authenticated. Subscribing to streams...');
+				if (currentTicker) {
+					const subscribeMsg = {
+						action: 'subscribe',
+						trades: [currentTicker],
+						quotes: [currentTicker],
+						bars: [currentTicker],
+					};
+					socket.send(JSON.stringify(subscribeMsg));
+				}
+				return;
 			}
 
-			// if (data.type === 'trade') {
-			// 	const tosObject = tradeMessage(data);
+			// Handle trade data
+			if (Array.isArray(data)) {
+				data.forEach((item) => {
+					if (item.T === 't') {
+						const tosObject = tradeMessage(item);
+						tradeQueue.enqueue(tosObject);
+						setTrades([...tradeQueue.getItems()]);
+					}
 
-			// 	tosObject.forEach((item) => {
-			// 		tradeQueue.enqueue(item);
-			// 	});
+					// Add handling for 'q' (quote) and 'b' (bar) if needed
+				});
+			}
 
-			// 	setTrades(tradeQueue.getItems());
-			// 	// logic for updating queue, a forEach to loop over tosObject and extract time array items.
-			// }
-
-			// Handle errors gracefully
+			// Handle errors
 			if (data.type === 'error') {
 				console.error('Error from server:', data.msg);
 			}
@@ -62,8 +76,6 @@ const StockPrices = () => {
 		socket.addEventListener('close', () => {
 			console.log('WebSocket closed');
 		});
-
-		connection.current = socket;
 
 		return () => {
 			if (
@@ -74,43 +86,63 @@ const StockPrices = () => {
 				connection.current.close();
 			}
 		};
-	}, []);
+	}, [currentTicker]);
 
 	const subscribeToStock = (symbol) => {
-		console.log(`subscribing to ${symbol}`);
+		console.log(`Subscribing to ${symbol}`);
 		setStockName(symbol);
-		connection.current.send(
-			JSON.stringify({ type: 'subscribe', symbol: symbol })
-		);
+
+		const subscribeMsg = {
+			action: 'subscribe',
+			trades: [symbol],
+			quotes: [symbol],
+			bars: [symbol],
+		};
+
+		if (
+			connection.current &&
+			connection.current.readyState === WebSocket.OPEN
+		) {
+			connection.current.send(JSON.stringify(subscribeMsg));
+		}
 	};
 
 	const unsubscribeToStock = (symbol) => {
-		// setMostRecentPrice(null);
-		setStockName('');
-		connection.current.send(
-			JSON.stringify({ type: 'unsubscribe', symbol: symbol })
-		);
+		console.log(`Unsubscribing from ${symbol}`);
+		const unsubscribeMsg = {
+			action: 'unsubscribe',
+			trades: [symbol],
+			quotes: [symbol],
+			bars: [symbol],
+		};
+
+		if (
+			connection.current &&
+			connection.current.readyState === WebSocket.OPEN
+		) {
+			connection.current.send(JSON.stringify(unsubscribeMsg));
+		}
 	};
 
 	const handleSubmit = (e) => {
 		e.preventDefault();
-		console.log(`old: ${oldTicker}`);
-		console.log(`ticker input: ${tickerInput}`);
-		if (oldTicker) {
-			console.log('unsbcribing');
-			unsubscribeToStock(oldTicker);
+		const nextTicker = tickerInput.toUpperCase();
+
+		if (currentTicker) {
+			unsubscribeToStock(currentTicker);
 		}
-		setOldTicker(tickerInput);
+
+		setCurrentTicker(nextTicker);
 		setTickerInput('');
-		subscribeToStock(tickerInput);
+		subscribeToStock(nextTicker);
 	};
-	// lets move the form logic over to a new form file
 
 	const mappedTrades = trades.map((trade, index) => {
 		return (
 			<li key={index}>
 				<p>
-					Ticker: {trade.s} Price: {trade.p} Time: {trade.t}
+					Index: {index + 1} | Symbol: {trade.symbol} | Price: {trade.price} |
+					Size: {trade.size} | Time: {new Date(trade.time).toLocaleTimeString()}
 				</p>
 			</li>
 		);
@@ -118,14 +150,12 @@ const StockPrices = () => {
 
 	return (
 		<div>
-			<div>
-				Latest Trade
-				<div key={stockName}>
-					<h4>Stock: {stockName}</h4>
-					<ul>{mappedTrades}</ul>
-				</div>
+			<h2>Latest Trade</h2>
+			<div key={stockName}>
+				<h4>Stock: {stockName}</h4>
+				<ul>{mappedTrades}</ul>
 			</div>
-			<button onClick={() => console.log(`debugging log`)}>Log</button>
+
 			<form onSubmit={handleSubmit}>
 				<label htmlFor="stock_ticker">Stock Ticker:</label>
 				<input
@@ -133,11 +163,9 @@ const StockPrices = () => {
 					type="text"
 					name="stock_ticker"
 					value={tickerInput}
-					onChange={({ target }) => {
-						console.log(tickerInput);
-						setTickerInput(target.value);
-					}}
+					onChange={({ target }) => setTickerInput(target.value)}
 				/>
+				<button type="submit">Subscribe</button>
 			</form>
 		</div>
 	);
