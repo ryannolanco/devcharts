@@ -1,6 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
 import tradeMessage from './stock-prices-functions/tradeMessage';
 import Queue from '../classes/Queue';
+import quoteMessage from './stock-prices-functions/quoteMessage';
+import stockSubscriptionForm from './stock-sub-form/stockSubscriptionForm';
+
+import './stockprices.css';
 
 const ALPACA_API_KEY_ID = import.meta.env.VITE_ALPACA_API_KEY_ID;
 const ALPACA_API_SECRET_ID = import.meta.env.VITE_ALPACA_API_SECRET_ID;
@@ -9,14 +13,20 @@ const StockPrices = () => {
 	const connection = useRef(null);
 
 	const [stockName, setStockName] = useState('');
-	const [tickerInput, setTickerInput] = useState('');
 	const [currentTicker, setCurrentTicker] = useState('');
+
+	// current subscriptions object to handle more robust data
+	const [subscriptions, setSubscriptions] = useState({});
+
 	const [trades, setTrades] = useState([]);
+	const [quote, setQuote] = useState({});
 
 	const tradeQueue = new Queue(10);
 
 	useEffect(() => {
-		const socket = new WebSocket('wss://stream.data.alpaca.markets/v2/test');
+		// const socket = new WebSocket('wss://stream.data.alpaca.markets/v2/test');
+		const socket = new WebSocket('wss://stream.data.alpaca.markets/v2/iex');
+
 		connection.current = socket;
 
 		socket.addEventListener('open', () => {
@@ -58,11 +68,16 @@ const StockPrices = () => {
 			if (Array.isArray(data)) {
 				data.forEach((item) => {
 					if (item.T === 't') {
+						//need individual stock object for each subscription
 						const tosObject = tradeMessage(item);
 						tradeQueue.enqueue(tosObject);
 						setTrades([...tradeQueue.getItems()]);
 					}
 
+					if (item.T === 'q') {
+						const quoteObj = quoteMessage(item);
+						setQuote(quoteObj);
+					}
 					// Add handling for 'q' (quote) and 'b' (bar) if needed
 				});
 			}
@@ -88,55 +103,6 @@ const StockPrices = () => {
 		};
 	}, [currentTicker]);
 
-	const subscribeToStock = (symbol) => {
-		console.log(`Subscribing to ${symbol}`);
-		setStockName(symbol);
-
-		const subscribeMsg = {
-			action: 'subscribe',
-			trades: [symbol],
-			quotes: [symbol],
-			bars: [symbol],
-		};
-
-		if (
-			connection.current &&
-			connection.current.readyState === WebSocket.OPEN
-		) {
-			connection.current.send(JSON.stringify(subscribeMsg));
-		}
-	};
-
-	const unsubscribeToStock = (symbol) => {
-		console.log(`Unsubscribing from ${symbol}`);
-		const unsubscribeMsg = {
-			action: 'unsubscribe',
-			trades: [symbol],
-			quotes: [symbol],
-			bars: [symbol],
-		};
-
-		if (
-			connection.current &&
-			connection.current.readyState === WebSocket.OPEN
-		) {
-			connection.current.send(JSON.stringify(unsubscribeMsg));
-		}
-	};
-
-	const handleSubmit = (e) => {
-		e.preventDefault();
-		const nextTicker = tickerInput.toUpperCase();
-
-		if (currentTicker) {
-			unsubscribeToStock(currentTicker);
-		}
-
-		setCurrentTicker(nextTicker);
-		setTickerInput('');
-		subscribeToStock(nextTicker);
-	};
-
 	const mappedTrades = trades.map((trade, index) => {
 		return (
 			<li key={index}>
@@ -151,22 +117,17 @@ const StockPrices = () => {
 	return (
 		<div>
 			<h2>Latest Trade</h2>
+			<div className="current-price">
+				<p>Bid:{quote.bidPrice}</p>
+				<p>Size:{quote.bidSize}</p>
+				<p>Ask:{quote.askPrice}</p>
+				<p>Size:{quote.askSize}</p>
+				<stockSubscriptionForm />
+			</div>
 			<div key={stockName}>
 				<h4>Stock: {stockName}</h4>
 				<ul>{mappedTrades}</ul>
 			</div>
-
-			<form onSubmit={handleSubmit}>
-				<label htmlFor="stock_ticker">Stock Ticker:</label>
-				<input
-					id="stock_ticker"
-					type="text"
-					name="stock_ticker"
-					value={tickerInput}
-					onChange={({ target }) => setTickerInput(target.value)}
-				/>
-				<button type="submit">Subscribe</button>
-			</form>
 		</div>
 	);
 };
