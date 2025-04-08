@@ -1,7 +1,16 @@
 import React from 'react';
 import { useState } from 'react';
+import {
+	subscribeToStock,
+	unsubscribeToStock,
+} from '../stock-prices-functions/stockSubscriptionFunctions';
 
-const stockSubscriptionForm = ({ subscriptions, setSubscriptions }) => {
+const StockSubscriptionForm = ({
+	subscriptions,
+	setSubscriptions,
+	setStockName,
+	connection,
+}) => {
 	const [tickerInput, setTickerInput] = useState('');
 
 	const handleSubmit = (e, connection, key) => {
@@ -36,4 +45,4 @@ const stockSubscriptionForm = ({ subscriptions, setSubscriptions }) => {
 	);
 };
 
-export default stockSubscriptionForm;
+export default StockSubscriptionForm;

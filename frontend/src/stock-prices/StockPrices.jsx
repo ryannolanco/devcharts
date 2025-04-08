@@ -2,9 +2,10 @@ import React, { useEffect, useRef, useState } from 'react';
 import tradeMessage from './stock-prices-functions/tradeMessage';
 import Queue from '../classes/Queue';
 import quoteMessage from './stock-prices-functions/quoteMessage';
-import stockSubscriptionForm from './stock-sub-form/stockSubscriptionForm';
+import StockSubscriptionForm from './stock-sub-form/StockSubscriptionForm';
 
 import './stockprices.css';
+import handleTradeData from './stock-prices-functions/handleTradeData';
 
 const ALPACA_API_KEY_ID = import.meta.env.VITE_ALPACA_API_KEY_ID;
 const ALPACA_API_SECRET_ID = import.meta.env.VITE_ALPACA_API_SECRET_ID;
@@ -17,15 +18,14 @@ const StockPrices = () => {
 
 	// current subscriptions object to handle more robust data
 	const [subscriptions, setSubscriptions] = useState({});
+	const tradeQueues = {}; // Each key will be a stock symbol like "AAPL", "TSLA", etc.
 
-	const [trades, setTrades] = useState([]);
+	const [trades, setTrades] = useState({});
 	const [quote, setQuote] = useState({});
 
-	const tradeQueue = new Queue(10);
-
 	useEffect(() => {
-		// const socket = new WebSocket('wss://stream.data.alpaca.markets/v2/test');
-		const socket = new WebSocket('wss://stream.data.alpaca.markets/v2/iex');
+		const socket = new WebSocket('wss://stream.data.alpaca.markets/v2/test');
+		// const socket = new WebSocket('wss://stream.data.alpaca.markets/v2/iex');
 
 		connection.current = socket;
 
@@ -70,8 +70,12 @@ const StockPrices = () => {
 					if (item.T === 't') {
 						//need individual stock object for each subscription
 						const tosObject = tradeMessage(item);
-						tradeQueue.enqueue(tosObject);
-						setTrades([...tradeQueue.getItems()]);
+						const symbol = tosObject.symbol;
+						tradeQueues = handleTradeData(tosObject, tradeQueues);
+						// Access recent trades for this stock
+						const recentTrades = tradeQueues[tosObject.symbol].getItems();
+						setTrades({ ...trades, [symbol]: recentTrades });
+						console.log(recentTrades);
 					}
 
 					if (item.T === 'q') {
@@ -103,16 +107,16 @@ const StockPrices = () => {
 		};
 	}, [currentTicker]);
 
-	const mappedTrades = trades.map((trade, index) => {
-		return (
-			<li key={index}>
-				<p>
-					Index: {index + 1} | Symbol: {trade.symbol} | Price: {trade.price} |
-					Size: {trade.size} | Time: {new Date(trade.time).toLocaleTimeString()}
-				</p>
-			</li>
-		);
-	});
+	// const mappedTrades = trades.map((trade, index) => {
+	// 	return (
+	// 		<li key={index}>
+	// 			<p>
+	// 				Index: {index + 1} | Symbol: {trade.symbol} | Price: {trade.price} |
+	// 				Size: {trade.size} | Time: {new Date(trade.time).toLocaleTimeString()}
+	// 			</p>
+	// 		</li>
+	// 	);
+	// });
 
 	return (
 		<div>
@@ -122,11 +126,17 @@ const StockPrices = () => {
 				<p>Size:{quote.bidSize}</p>
 				<p>Ask:{quote.askPrice}</p>
 				<p>Size:{quote.askSize}</p>
-				<stockSubscriptionForm />
+				<StockSubscriptionForm
+					setSubscriptions={setSubscriptions}
+					subscriptions={subscriptions}
+					setStockName={setStockName}
+					connection={connection}
+				/>
 			</div>
 			<div key={stockName}>
 				<h4>Stock: {stockName}</h4>
-				<ul>{mappedTrades}</ul>
+				{/* <ul>{mappedTrades}</ul> */}
+				TEST
 			</div>
 		</div>
 	);

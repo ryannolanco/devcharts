@@ -1,23 +1,20 @@
-export default function subscribeToStock (connection, symbol) {
-  console.log(`Subscribing to ${symbol}`);
-  setStockName(symbol);
+export function subscribeToStock(connection, symbol) {
+	console.log(`Subscribing to ${symbol}`);
+	setStockName(symbol);
 
-  const subscribeMsg = {
-    action: 'subscribe',
-    trades: [symbol],
-    quotes: [symbol],
-    bars: [symbol],
-  };
+	const subscribeMsg = {
+		action: 'subscribe',
+		trades: [symbol],
+		quotes: [symbol],
+		bars: [symbol],
+	};
 
-  if (
-    connection.current &&
-    connection.current.readyState === WebSocket.OPEN
-  ) {
-    connection.current.send(JSON.stringify(subscribeMsg));
-  }
-};
+	if (connection.current && connection.current.readyState === WebSocket.OPEN) {
+		connection.current.send(JSON.stringify(subscribeMsg));
+	}
+}
 
-export default function unsubscribeToStock(connection, symbol) {
+export function unsubscribeToStock(connection, symbol) {
 	console.log(`Unsubscribing from ${symbol}`);
 	const unsubscribeMsg = {
 		action: 'unsubscribe',
@@ -29,4 +26,4 @@ export default function unsubscribeToStock(connection, symbol) {
 	if (connection.current && connection.current.readyState === WebSocket.OPEN) {
 		connection.current.send(JSON.stringify(unsubscribeMsg));
 	}
-};
+}

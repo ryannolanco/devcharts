@@ -1,5 +1,6 @@
 export default function quoteMessage(data) {
 	const quoteData = {
+		symbol: data.S,
 		bidPrice: data.bp,
 		bidSize: data.bs,
 		askPrice: data.ap,
@@ -9,25 +10,7 @@ export default function quoteMessage(data) {
 	return quoteData;
 }
 
-const tradeQueues = {}; // Each key will be a stock symbol like "AAPL", "TSLA", etc.
-
-// function handleTradeData(trade) {
-//   const symbol = trade.S;
-
-//   // If we don't already have a queue for this stock, create one
-//   if (!tradeQueues[symbol]) {
-//     tradeQueues[symbol] = new Queue(10); // adjust size as needed
-//   }
-
-//   // Add new trade data to the symbol's queue
-//   tradeQueues[symbol].enqueue(trade);
-
-//   // Access recent trades for this stock
-//   const recentTrades = tradeQueues[symbol].getItems();
-
-//   console.log(`${symbol} recent trades:`, recentTrades);
-// }
-/*
+/* 
 {
   "T": "q",                      // Message type: "q" stands for quote
   "S": "AMD",                   // Symbol: stock ticker symbol, e.g., AMD
