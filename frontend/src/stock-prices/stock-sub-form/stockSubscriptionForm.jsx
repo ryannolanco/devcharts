@@ -6,42 +6,47 @@ import {
 } from '../stock-prices-functions/stockSubscriptionFunctions';
 
 const StockSubscriptionForm = ({
-	subscriptions,
-	setSubscriptions,
-	setStockName,
+	color,
+	currentStocks,
+	setCurrentStocks,
 	connection,
 }) => {
 	const [tickerInput, setTickerInput] = useState('');
+	const [currentTicker, setCurrentTicker] = useState('');
 
-	const handleSubmit = (e, connection, key) => {
+	const handleSubmit = (e) => {
 		e.preventDefault();
-		const currentTicker = subscriptions[key];
+
 		const nextTicker = tickerInput.toUpperCase();
 
 		if (currentTicker) {
 			unsubscribeToStock(connection, currentTicker);
 		}
 
-		setSubscriptions({
-			...subscriptions,
-			[key]: nextTicker,
+		setCurrentStocks({
+			...currentStocks,
+			[color]: nextTicker,
 		});
 
 		subscribeToStock(connection, nextTicker);
+		setCurrentTicker(nextTicker);
 	};
 
 	return (
-		<form onSubmit={handleSubmit}>
-			<label htmlFor="stock_ticker">Stock Ticker:</label>
-			<input
-				id="stock_ticker"
-				type="text"
-				name="stock_ticker"
-				value={tickerInput}
-				onChange={({ target }) => setTickerInput(target.value)}
-			/>
-			<button type="submit">Subscribe</button>
-		</form>
+		<>
+			<form onSubmit={handleSubmit}>
+				<label htmlFor="stock_ticker">Stock Ticker:</label>
+				<input
+					id="stock_ticker"
+					type="text"
+					name="stock_ticker"
+					value={tickerInput}
+					onChange={({ target }) => setTickerInput(target.value)}
+				/>
+				<button type="submit">Subscribe</button>
+			</form>
+			<button onClick={() => console.log(connection)}>Log</button>
+		</>
 	);
 };
 

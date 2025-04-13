@@ -13,14 +13,10 @@ const ALPACA_API_SECRET_ID = import.meta.env.VITE_ALPACA_API_SECRET_ID;
 const StockPrices = () => {
 	const connection = useRef(null);
 
-	const [stockName, setStockName] = useState('');
-	const [currentTicker, setCurrentTicker] = useState('');
-
 	// current subscriptions object to handle more robust data
-	const [subscriptions, setSubscriptions] = useState({});
-	const tradeQueues = {}; // Each key will be a stock symbol like "AAPL", "TSLA", etc.
-
-	const [trades, setTrades] = useState({});
+	let tradeQueues = {}; // Each key will be a stock symbol like "AAPL", "TSLA", etc.
+	const [currentStocks, setCurrentStocks] = useState({});
+	const [trades, setTrades] = useState([]);
 	const [quote, setQuote] = useState({});
 
 	useEffect(() => {
@@ -28,6 +24,7 @@ const StockPrices = () => {
 		// const socket = new WebSocket('wss://stream.data.alpaca.markets/v2/iex');
 
 		connection.current = socket;
+		console.log(connection);
 
 		socket.addEventListener('open', () => {
 			console.log('WebSocket connected');
@@ -52,15 +49,15 @@ const StockPrices = () => {
 				data[0]?.msg === 'authenticated'
 			) {
 				console.log('Authenticated. Subscribing to streams...');
-				if (currentTicker) {
-					const subscribeMsg = {
-						action: 'subscribe',
-						trades: [currentTicker],
-						quotes: [currentTicker],
-						bars: [currentTicker],
-					};
-					socket.send(JSON.stringify(subscribeMsg));
-				}
+				// if (subscriptions) {
+				// 	const subscribeMsg = {
+				// 		action: 'subscribe',
+				// 		trades: [currentTicker],
+				// 		quotes: [currentTicker],
+				// 		bars: [currentTicker],
+				// 	};
+				// 	socket.send(JSON.stringify(subscribeMsg));
+				// }
 				return;
 			}
 
@@ -69,13 +66,12 @@ const StockPrices = () => {
 				data.forEach((item) => {
 					if (item.T === 't') {
 						//need individual stock object for each subscription
-						const tosObject = tradeMessage(item);
-						const symbol = tosObject.symbol;
+						let tosObject = tradeMessage(item);
+						let symbol = tosObject.symbol;
 						tradeQueues = handleTradeData(tosObject, tradeQueues);
 						// Access recent trades for this stock
 						const recentTrades = tradeQueues[tosObject.symbol].getItems();
-						setTrades({ ...trades, [symbol]: recentTrades });
-						console.log(recentTrades);
+						setTrades([...trades, { [symbol]: recentTrades }]);
 					}
 
 					if (item.T === 'q') {
@@ -105,37 +101,69 @@ const StockPrices = () => {
 				connection.current.close();
 			}
 		};
-	}, [currentTicker]);
+	}, []);
 
-	// const mappedTrades = trades.map((trade, index) => {
-	// 	return (
-	// 		<li key={index}>
-	// 			<p>
-	// 				Index: {index + 1} | Symbol: {trade.symbol} | Price: {trade.price} |
-	// 				Size: {trade.size} | Time: {new Date(trade.time).toLocaleTimeString()}
-	// 			</p>
-	// 		</li>
-	// 	);
-	// });
+	const redSymbol = currentStocks['red'];
+
+	const sortedRedTrades = trades
+		.flatMap((trade) => trade[redSymbol] || [])
+		.sort((a, b) => new Date(b.time) - new Date(a.time));
+
+	const mappedRedTrades = sortedRedTrades.map((tempTrade, i) => (
+		<li key={`${tempTrade.symbol}-${tempTrade.time}-${i}`}>
+			<p>
+				Index: {i + 1} | Symbol: {tempTrade.symbol} | Price: {tempTrade.price} |
+				Size: {tempTrade.size} | Time:{' '}
+				{new Date(tempTrade.time).toLocaleTimeString()}
+			</p>
+		</li>
+	));
+
+	const blueSymbol = currentStocks['blue'];
+
+	const sortedBlueTrades = trades
+		.flatMap((trade) => trade[blueSymbol] || [])
+		.sort((a, b) => new Date(b.time) - new Date(a.time));
+
+	const mappedBlueTrades = sortedBlueTrades.map((tempTrade, i) => (
+		<li key={`${tempTrade.symbol}-${tempTrade.time}-${i}`}>
+			<p>
+				Index: {i + 1} | Symbol: {tempTrade.symbol} | Price: {tempTrade.price} |
+				Size: {tempTrade.size} | Time:{' '}
+				{new Date(tempTrade.time).toLocaleTimeString()}
+			</p>
+		</li>
+	));
 
 	return (
 		<div>
-			<h2>Latest Trade</h2>
+			{/* <h2>Latest Trade</h2>
 			<div className="current-price">
 				<p>Bid:{quote.bidPrice}</p>
 				<p>Size:{quote.bidSize}</p>
 				<p>Ask:{quote.askPrice}</p>
 				<p>Size:{quote.askSize}</p>
-				<StockSubscriptionForm
-					setSubscriptions={setSubscriptions}
-					subscriptions={subscriptions}
-					setStockName={setStockName}
-					connection={connection}
-				/>
+			</div> */}
+			<StockSubscriptionForm
+				color={'red'}
+				currentStocks={currentStocks}
+				setCurrentStocks={setCurrentStocks}
+				connection={connection}
+			/>
+			<div key="red">
+				{/* <h4>Stock: {stockName}</h4> */}
+				<ul>{mappedRedTrades}</ul>
+				TEST
 			</div>
-			<div key={stockName}>
-				<h4>Stock: {stockName}</h4>
-				{/* <ul>{mappedTrades}</ul> */}
+			<StockSubscriptionForm
+				color={'blue'}
+				currentStocks={currentStocks}
+				setCurrentStocks={setCurrentStocks}
+				connection={connection}
+			/>
+			<div key="blue">
+				{/* <h4>Stock: {stockName}</h4> */}
+				<ul>{mappedBlueTrades}</ul>
 				TEST
 			</div>
 		</div>

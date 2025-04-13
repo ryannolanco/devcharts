@@ -1,6 +1,5 @@
 export function subscribeToStock(connection, symbol) {
 	console.log(`Subscribing to ${symbol}`);
-	setStockName(symbol);
 
 	const subscribeMsg = {
 		action: 'subscribe',
