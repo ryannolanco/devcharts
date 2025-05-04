@@ -1,10 +1,13 @@
 import './App.css';
 import StockPrices from './stock-prices/StockPrices';
+import { BrowserRouter } from 'react-router-dom';
 
 function App() {
 	return (
 		<div>
-			<StockPrices />
+			<BrowserRouter>
+				<StockPrices />
+			</BrowserRouter>
 		</div>
 	);
 }

@@ -16,8 +16,8 @@ const StockPrices = () => {
 	// current subscriptions object to handle more robust data
 	let tradeQueues = {}; // Each key will be a stock symbol like "AAPL", "TSLA", etc.
 	const [currentStocks, setCurrentStocks] = useState({});
-	const [trades, setTrades] = useState([]);
-	const [quote, setQuote] = useState({});
+	const [trades, setTrades] = useState({});
+	const [quotes, setQuotes] = useState({});
 
 	useEffect(() => {
 		const socket = new WebSocket('wss://stream.data.alpaca.markets/v2/test');
@@ -49,38 +49,40 @@ const StockPrices = () => {
 				data[0]?.msg === 'authenticated'
 			) {
 				console.log('Authenticated. Subscribing to streams...');
-				// if (subscriptions) {
-				// 	const subscribeMsg = {
-				// 		action: 'subscribe',
-				// 		trades: [currentTicker],
-				// 		quotes: [currentTicker],
-				// 		bars: [currentTicker],
-				// 	};
-				// 	socket.send(JSON.stringify(subscribeMsg));
-				// }
+
+				if (currentStocks.length) {
+					const currentTickers = Object.values(currentStocks);
+
+					const subscribeMsg = {
+						action: 'subscribe',
+						trades: [...currentTickers],
+						// quotes: [currentTicker],
+						// bars: [currentTicker],
+					};
+					socket.send(JSON.stringify(subscribeMsg));
+				}
+
 				return;
 			}
 
 			// Handle trade data
-			if (Array.isArray(data)) {
+			setTrades((prevTrades) => {
+				const updated = { ...prevTrades };
+
 				data.forEach((item) => {
 					if (item.T === 't') {
-						//need individual stock object for each subscription
-						let tosObject = tradeMessage(item);
-						let symbol = tosObject.symbol;
-						tradeQueues = handleTradeData(tosObject, tradeQueues);
-						// Access recent trades for this stock
-						const recentTrades = tradeQueues[tosObject.symbol].getItems();
-						setTrades([...trades, { [symbol]: recentTrades }]);
-					}
+						const tosObject = tradeMessage(item);
+						const symbol = tosObject.symbol;
 
-					if (item.T === 'q') {
-						const quoteObj = quoteMessage(item);
-						setQuote(quoteObj);
+						tradeQueues = handleTradeData(tosObject, tradeQueues);
+						const recentTrades = tradeQueues[symbol].getItems();
+
+						updated[symbol] = recentTrades;
 					}
-					// Add handling for 'q' (quote) and 'b' (bar) if needed
 				});
-			}
+
+				return updated;
+			});
 
 			// Handle errors
 			if (data.type === 'error') {
@@ -105,8 +107,8 @@ const StockPrices = () => {
 
 	const redSymbol = currentStocks['red'];
 
-	const sortedRedTrades = trades
-		.flatMap((trade) => trade[redSymbol] || [])
+	const sortedRedTrades = (trades[redSymbol] || [])
+		.slice() // shallow copy to avoid mutating state
 		.sort((a, b) => new Date(b.time) - new Date(a.time));
 
 	const mappedRedTrades = sortedRedTrades.map((tempTrade, i) => (
@@ -121,8 +123,8 @@ const StockPrices = () => {
 
 	const blueSymbol = currentStocks['blue'];
 
-	const sortedBlueTrades = trades
-		.flatMap((trade) => trade[blueSymbol] || [])
+	const sortedBlueTrades = (trades[blueSymbol] || [])
+		.slice() // shallow copy to avoid mutating state
 		.sort((a, b) => new Date(b.time) - new Date(a.time));
 
 	const mappedBlueTrades = sortedBlueTrades.map((tempTrade, i) => (
@@ -151,9 +153,8 @@ const StockPrices = () => {
 				connection={connection}
 			/>
 			<div key="red">
-				{/* <h4>Stock: {stockName}</h4> */}
+				<h4>Stock: {currentStocks['red']}</h4>
 				<ul>{mappedRedTrades}</ul>
-				TEST
 			</div>
 			<StockSubscriptionForm
 				color={'blue'}
