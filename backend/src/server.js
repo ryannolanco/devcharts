@@ -1,30 +1,19 @@
-import { createServer } from 'http';
-// import { WebSocketServer } from 'ws';
-import dotenv from 'dotenv';
-import app from './app.js'; // Ensure this is the correct import
+const { PORT = 5001 } = process.env;
 
-dotenv.config();
+const app = require("./app");
+const knex = require("./db/connection");
 
-const { PORT = 5002 } = process.env;
+knex.migrate
+  .latest()
+  .then((migrations) => {
+    console.log("migrations", migrations);
+    app.listen(PORT, listener);
+  })
+  .catch((error) => {
+    console.error(error);
+    knex.destroy();
+  });
 
-// Create an HTTP server with Express
-const server = createServer(app);
-
-// Attach WebSocket server to the same HTTP server
-// const wss = new WebSocketServer({ server });
-
-// wss.on('connection', (ws) => {
-// 	console.log('Client connected');
-
-// 	ws.on('message', (message) => {
-// 		console.log(`Received: ${message}`);
-// 		ws.send(`Server: ${message}`); // Echo message back to client
-// 	});
-
-// 	ws.on('close', () => console.log('Client disconnected'));
-
-// 	ws.on('error', (error) => console.error('WebSocket error:', error));
-// });
-
-// Start the server
-server.listen(PORT, () => console.log(`Listening on port ${PORT}!`));
+function listener() {
+  console.log(`Listening on Port ${PORT}!`);
+}

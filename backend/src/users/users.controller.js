@@ -1,6 +1,6 @@
 const service = require("./users.service");
 
-const asyncErrorBoundary = require("../errors/asyncErrorBoundary");
+const asyncErrorBoundary = require("../db/errors/asyncErrorBoundary");
 
 require("dotenv").config(); // Ensure this is called once in your app (can also go in your server.js)
 
@@ -65,7 +65,7 @@ async function emailDoesNotExist(req, res, next) {
   const normalizedEmail = email.trim().toLowerCase();
 
   try {
-    const userWithEmail = await service.readUser(normalizedEmail);
+    const userWithEmail = await service.getUserByEmail(normalizedEmail);
     if (userWithEmail) {
       return next({
         status: 400,
@@ -208,7 +208,7 @@ function adminIsValid(adminEmails) {
     }
 
     // Ensure isAdmin is a boolean
-    if (typeof isAdmin !== "boolean") {
+    if (isAdmin && typeof isAdmin !== "boolean") {
       return next({
         status: 400,
         message: "isAdmin must be a boolean value.",
@@ -232,7 +232,9 @@ function adminIsValid(adminEmails) {
 
 /* ---- CRUD FUNCTIONS ---- */
 async function createUser(req, res) {
-  const data = await service.create(req.body.data);
+  const { first_name, last_name, email, password, isAdmin } = req.body.data;
+  const userData = { first_name, last_name, email, password, is_admin: isAdmin };
+  const data = await service.create(userData);
   res.status(200).json({ data });
 }
 
