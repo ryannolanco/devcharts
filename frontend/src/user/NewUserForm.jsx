@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
-import { Form } from 'react-router-dom';
 
-const intialFormData = {
+const initialFormData = {
 	first_name: '',
 	last_name: '',
 	email: '',
@@ -10,13 +9,27 @@ const intialFormData = {
 };
 
 const NewUserForm = () => {
-	const [formData, setFormData] = useState({ ...intialFormData });
-	const handleSubmit = () => {};
+	const [formData, setFormData] = useState({ ...initialFormData });
+	const [errors, setErrors] = useState(null);
+
+	async function handleSubmit(event) {
+		event.preventDefault();
+		const controller = new AbortController();
+		const signal = controller.signal;
+
+		try {
+		} catch (errors) {
+			setErrors(errors);
+		}
+	}
 	const handleChange = ({ target }) => {
-		const value =
-			target.name === 'is_admin' ? !formData.is_admin : target.value;
+		let value = target.value;
+		if (target.name === 'is_admin') {
+			value = value === 'true'; // converts string to boolean
+		}
 		setFormData({ ...formData, [target.name]: value });
 	};
+
 	return (
 		<div>
 			<form onSubmit={handleSubmit}>
@@ -82,7 +95,7 @@ const NewUserForm = () => {
 						<input
 							type="radio"
 							name="is_admin"
-							value={true}
+							value="true"
 							checked={formData.is_admin === true}
 							onChange={handleChange}
 						/>
@@ -93,7 +106,7 @@ const NewUserForm = () => {
 						<input
 							type="radio"
 							name="is_admin"
-							value={false}
+							value="false"
 							checked={formData.is_admin === false}
 							onChange={handleChange}
 						/>
