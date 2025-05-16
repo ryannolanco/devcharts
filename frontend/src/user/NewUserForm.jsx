@@ -20,6 +20,7 @@ const NewUserForm = () => {
 
 		try {
 			console.log('sending request');
+			console.log(formData);
 
 			const response = await createUser(formData, signal);
 			console.log(`User Created: ${response}`);
