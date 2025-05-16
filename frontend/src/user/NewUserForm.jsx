@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createUser } from '../utils/api.js';
 
 const initialFormData = {
 	first_name: '',
@@ -18,7 +19,14 @@ const NewUserForm = () => {
 		const signal = controller.signal;
 
 		try {
+			console.log('sending request');
+
+			const response = await createUser(formData, signal);
+			console.log(`User Created: ${response}`);
+			setFormData({ ...initialFormData });
+			setErrors(null);
 		} catch (errors) {
+			console.log(errors);
 			setErrors(errors);
 		}
 	}
@@ -34,21 +42,21 @@ const NewUserForm = () => {
 		<div>
 			<form onSubmit={handleSubmit}>
 				<fieldset>
-					<label htmlFor="firstName">First Name:</label>
+					<label htmlFor="first_name">First Name:</label>
 					<input
 						type="text"
-						id="firstName"
-						name="firstName"
+						id="first_name"
+						name="first_name"
 						placeholder="Enter your first name"
 						onChange={handleChange}
 						required
 					/>
 
-					<label htmlFor="lastName">Last Name:</label>
+					<label htmlFor="last_name">Last Name:</label>
 					<input
 						type="text"
-						id="lastName"
-						name="lastName"
+						id="last_name"
+						name="last_name"
 						placeholder="Enter your last name"
 						onChange={handleChange}
 						required
@@ -113,6 +121,7 @@ const NewUserForm = () => {
 						No
 					</label>
 				</fieldset>
+				<button type="submit">Submit</button>
 			</form>
 		</div>
 	);
