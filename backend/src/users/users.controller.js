@@ -9,7 +9,7 @@ const adminEmails = process.env.ADMIN_EMAILS
 	? process.env.ADMIN_EMAILS.split(',').map((email) => email.trim())
 	: [];
 
-const requiredProperties = ['first_name', 'last_name', 'email', 'password'];
+const requiredProperties = ['name', 'email', 'password'];
 
 /* ----- HELPER FUNCTIONS ----- */
 
@@ -106,23 +106,20 @@ function passwordIsValid(req, res, next) {
 
 //check if name is valid
 function nameIsValid(req, res, next) {
-	const { data: { first_name, last_name } = {} } = req.body;
+	const { data: { name } = {} } = req.body;
 
-	if (!first_name || !last_name) {
-		return next({
-			status: 400,
-			message: 'Both first name and last name are required.',
-		});
-	}
-
-	const trimmedFirstName = first_name.trim();
-	const trimmedLastName = last_name.trim();
+	const formattedName = name
+		.toLowerCase()
+		.split(' ')
+		.filter(Boolean) // removes extra spaces
+		.map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+		.join(' ');
 
 	// Check if first and last names are between 1 and 20 characters
-	if (trimmedFirstName.length < 1 || trimmedFirstName.length > 20) {
+	if (formattedName.length < 1 || formattedName.length > 40) {
 		return next({
 			status: 400,
-			message: 'First name must be between 1 and 20 characters.',
+			message: 'First name must be between 1 and 40 characters.',
 		});
 	}
 
@@ -135,38 +132,15 @@ function nameIsValid(req, res, next) {
 
 	// Ensure the names only contain alphabetic characters and spaces
 	const nameRegex = /^[A-Za-z\s]+$/;
-	if (!nameRegex.test(trimmedFirstName)) {
+	if (!nameRegex.test(formattedName)) {
 		return next({
 			status: 400,
-			message: 'First name can only contain letters and spaces.',
+			message: 'Name can only contain letters and spaces.',
 		});
 	}
-
-	if (!nameRegex.test(trimmedLastName)) {
-		return next({
-			status: 400,
-			message: 'Last name can only contain letters and spaces.',
-		});
-	}
-
-	// Check if names contain multiple consecutive spaces
-	const spaceRegex = /\s{2,}/;
-	if (spaceRegex.test(trimmedFirstName) || spaceRegex.test(trimmedLastName)) {
-		return next({
-			status: 400,
-			message: 'Names cannot contain multiple consecutive spaces.',
-		});
-	}
-
-	// Capitalize first letters of names (optional)
-	const capitalize = (str) =>
-		str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
-	const normalizedFirstName = capitalize(trimmedFirstName);
-	const normalizedLastName = capitalize(trimmedLastName);
 
 	// Store normalized names
-	req.body.data.first_name = normalizedFirstName;
-	req.body.data.last_name = normalizedLastName;
+	req.body.data.name = formattedName;
 
 	next();
 }
