@@ -123,13 +123,6 @@ function nameIsValid(req, res, next) {
 		});
 	}
 
-	if (trimmedLastName.length < 1 || trimmedLastName.length > 20) {
-		return next({
-			status: 400,
-			message: 'Last name must be between 1 and 20 characters.',
-		});
-	}
-
 	// Ensure the names only contain alphabetic characters and spaces
 	const nameRegex = /^[A-Za-z\s]+$/;
 	if (!nameRegex.test(formattedName)) {
@@ -192,10 +185,9 @@ function adminIsValid(adminEmails) {
 
 /* ---- CRUD FUNCTIONS ---- */
 async function createUser(req, res) {
-	const { first_name, last_name, email, password, isAdmin } = req.body.data;
+	const { name, email, password, isAdmin } = req.body.data;
 	const userData = {
-		first_name,
-		last_name,
+		name,
 		email,
 		password,
 		is_admin: isAdmin,

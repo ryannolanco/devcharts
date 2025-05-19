@@ -46,7 +46,7 @@ const NewUserForm = () => {
 					<input
 						type="text"
 						id="name"
-						name="ame"
+						name="name"
 						placeholder="Enter your name"
 						onChange={handleChange}
 						required
