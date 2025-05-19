@@ -2,8 +2,7 @@ import React, { useState } from 'react';
 import { createUser } from '../utils/api.js';
 
 const initialFormData = {
-	first_name: '',
-	last_name: '',
+	name: '',
 	email: '',
 	password: '',
 	is_admin: false,
@@ -42,27 +41,19 @@ const NewUserForm = () => {
 	return (
 		<div>
 			<form onSubmit={handleSubmit}>
-				<fieldset>
-					<label htmlFor="first_name">First Name:</label>
+				<div>
+					<label htmlFor="first_name">Name:</label>
 					<input
 						type="text"
-						id="first_name"
-						name="first_name"
-						placeholder="Enter your first name"
+						id="name"
+						name="ame"
+						placeholder="Enter your name"
 						onChange={handleChange}
 						required
 					/>
+				</div>
 
-					<label htmlFor="last_name">Last Name:</label>
-					<input
-						type="text"
-						id="last_name"
-						name="last_name"
-						placeholder="Enter your last name"
-						onChange={handleChange}
-						required
-					/>
-
+				<div>
 					<label htmlFor="email">Email:</label>
 					<input
 						type="email"
@@ -72,10 +63,9 @@ const NewUserForm = () => {
 						onChange={handleChange}
 						required
 					/>
-				</fieldset>
+				</div>
 
-				<fieldset>
-					<legend>Password:</legend>
+				<div>
 					<label htmlFor="password">Password:</label>
 					<input
 						type="password"
@@ -85,21 +75,10 @@ const NewUserForm = () => {
 						onChange={handleChange}
 						required
 					/>
+				</div>
 
-					<label htmlFor="confirmPassword">Confirm Password:</label>
-					<input
-						type="password"
-						id="confirmPassword"
-						name="confirmPassword"
-						placeholder="Confirm your password"
-						onChange={handleChange}
-						required
-					/>
-				</fieldset>
-
-				<fieldset>
-					<legend>Admin:</legend>
-
+				<div>
+					<div>Admin:</div>
 					<label>
 						<input
 							type="radio"
@@ -110,7 +89,6 @@ const NewUserForm = () => {
 						/>
 						Yes
 					</label>
-
 					<label>
 						<input
 							type="radio"
@@ -121,8 +99,8 @@ const NewUserForm = () => {
 						/>
 						No
 					</label>
-				</fieldset>
-				<button type="submit">Submit</button>
+					<button type="submit">Submit</button>
+				</div>
 			</form>
 		</div>
 	);

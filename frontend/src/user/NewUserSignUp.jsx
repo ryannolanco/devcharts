@@ -4,6 +4,7 @@ import NewUserForm from './NewUserForm';
 const NewUserSignUp = () => {
 	return (
 		<div>
+			<div>SIGN UP</div>
 			<NewUserForm />
 		</div>
 	);
